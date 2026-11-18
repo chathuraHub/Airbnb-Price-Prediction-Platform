@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Error - Airbnb Price Prediction</title>
+    <script>
+        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); } catch (e) { }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+{% from "_macros.html" import icon, site_header %}
+
+<body>
+    <div class="page">
+        {{ site_header() }}
+
+        <main class="error-wrap">
+            <section class="card error-card">
+                <span class="error-icon">{{ icon('alert', 34) }}</span>
+                <h1>The prediction couldn't be completed</h1>
+                <p class="card-sub">Check the values you entered and try again. If it keeps failing, the details below
+                    show what went wrong.</p>
+                <pre class="error-message">{{ error_message }}</pre>
+                <a class="btn-primary btn-link" href="{{ url_for('home') }}">{{ icon('arrow-left', 20) }}<span>Back to
+                        the form</span></a>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,10 @@
+{
+    "model": "CatBoostRegressor_native_categorical",
+    "r2": 0.5720163861624918,
+    "mae": 53.2239192107242,
+    "rmse": 112.82980074354195,
+    "best_iteration": 1774,
+    "train_rows": 36794,
+    "validation_rows": 6494,
+    "test_rows": 10822
+}

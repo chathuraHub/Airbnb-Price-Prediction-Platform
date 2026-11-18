@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airbnb Price Prediction</title>
+    <script>
+        try { document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light'); } catch (e) {}
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+{% from "_macros.html" import icon, logo, site_header, select_field, number_field %}
+
+{# ---- values used by the form (kept after a prediction) ---- #}
+{% set fd = form_data if form_data is defined and form_data else {} %}
+{% set has_result = result is defined and result is not none %}
+
+{% set property_types = [
+    'Apartment', 'House', 'Condominium', 'Townhouse', 'Loft',
+    'Other', 'Guesthouse', 'Bed & Breakfast', 'Bungalow', 'Villa',
+    'Dorm', 'Guest suite', 'Camper/RV', 'Timeshare', 'Cabin',
+    'In-law', 'Hostel', 'Boutique hotel', 'Boat',
+    'Serviced apartment', 'Tent', 'Castle', 'Vacation home',
+    'Yurt', 'Hut', 'Treehouse', 'Chalet', 'Earth House',
+    'Tipi', 'Train', 'Cave', 'Casa particular',
+    'Parking Space', 'Lighthouse'
+] %}
+{% set room_types = ['Entire home/apt', 'Private room', 'Shared room'] %}
+{% set bed_types = ['Real Bed', 'Futon', 'Pull-out Sofa', 'Airbed', 'Couch'] %}
+{% set cancellation = [['flexible', 'Flexible'], ['moderate', 'Moderate'], ['strict', 'Strict'],
+                       ['super_strict_30', 'Super strict (30 days)'], ['super_strict_60', 'Super strict (60 days)']] %}
+{% set cities = [['Boston', 'Boston'], ['Chicago', 'Chicago'], ['DC', 'Washington, D.C.'],
+                 ['LA', 'Los Angeles'], ['NYC', 'New York'], ['SF', 'San Francisco']] %}
+{% set city_names = {'Boston': 'Boston', 'Chicago': 'Chicago', 'DC': 'Washington, D.C.',
+                     'LA': 'Los Angeles', 'NYC': 'New York', 'SF': 'San Francisco'} %}
+{% set yes_no = [['1', 'Yes'], ['0', 'No']] %}
+{% set bathroom_opts = ['0', '0.5', '1', '1.5', '2', '2.5', '3', '3.5', '4', '4.5', '5', '5.5', '6', '6.5', '7', '7.5', '8'] %}
+{% set guest_opts = range(1, 17) | map('string') | list %}
+{% set bedroom_opts = range(0, 11) | map('string') | list %}
+{% set bed_count_opts = range(0, 19) | map('string') | list %}
+
+<body>
+    <div class="page">
+
+        {{ site_header() }}
+
+        <!-- Hero -->
+        <section class="hero">
+            <div class="hero-text">
+                <h1>{{ logo(52) }}<br><span class="accent">Airbnb</span> Price Prediction</h1>
+                <p>Get an estimated price for your Airbnb listing using machine learning. Simply enter the property
+                    details and discover the predicted value!</p>
+            </div>
+            <div class="hero-tag" aria-hidden="true">Better insights<br>for smarter hosting</div>
+        </section>
+
+        <main class="main">
+
+            <!-- Form -->
+            <section class="card form-card">
+                <h2 class="card-title"><span class="title-chip pink">{{ icon('house', 22) }}</span><span>Property Details</span></h2>
+                <p class="card-sub">Fill in the details below to get an estimated price for your Airbnb listing.</p>
+
+                <form action="{{ url_for('home') }}" method="POST">
+                    <div class="fields">
+
+                        {{ select_field('property_type', 'Property Type', 'house', property_types, fd.get('property_type', 'Apartment')) }}
+                        {{ select_field('room_type', 'Room Type', 'bed', room_types, fd.get('room_type', 'Entire home/apt')) }}
+                        {{ select_field('bed_type', 'Bed Type', 'bed', bed_types, fd.get('bed_type', 'Real Bed')) }}
+
+                        {{ number_field('amenities', 'Number of Amenities', 'star', fd.get('amenities', '10'), 0, 200) }}
+                        {{ select_field('accommodates', 'Accommodates', 'users', guest_opts, fd.get('accommodates', '2')) }}
+                        {{ select_field('bathrooms', 'Number of Bathrooms', 'bath', bathroom_opts, fd.get('bathrooms', '1')) }}
+
+                        {{ select_field('cancellation_policy', 'Cancellation Policy', 'calendar', cancellation, fd.get('cancellation_policy', 'flexible')) }}
+                        {{ select_field('cleaning_fee', 'Cleaning Fee', 'dollar', yes_no, fd.get('cleaning_fee', '1')) }}
+                        {{ select_field('city', 'City', 'pin', cities, fd.get('city', 'NYC')) }}
+
+                        {{ select_field('host_identity_verified', 'Host Identity Verified', 'shield-check', yes_no, fd.get('host_identity_verified', '1')) }}
+                        {{ select_field('host_has_profile_pic', 'Host Profile Picture', 'user', yes_no, fd.get('host_has_profile_pic', '1')) }}
+                        {{ number_field('host_response_rate', 'Host Response Rate (%)', 'message', fd.get('host_response_rate', '90'), 0, 100) }}
+
+                        {{ select_field('instant_bookable', 'Instant Booking Available', 'zap', yes_no, fd.get('instant_bookable', '1')) }}
+                        {{ number_field('latitude', 'Latitude', 'pin', fd.get('latitude', '40.7128'), step='any', placeholder='e.g. 37.7749') }}
+                        {{ number_field('longitude', 'Longitude', 'pin', fd.get('longitude', '-74.0060'), step='any', placeholder='e.g. -122.4194') }}
+
+                        {{ number_field('number_of_reviews', 'Number of Reviews', 'star', fd.get('number_of_reviews', '10'), 0) }}
+                        {{ number_field('review_scores_rating', 'Review Score Rating (0–100)', 'star', fd.get('review_scores_rating', '90'), 0, 100) }}
+                        {{ select_field('bedrooms', 'Number of Bedrooms', 'bed', bedroom_opts, fd.get('bedrooms', '1')) }}
+
+                        {{ select_field('beds', 'Number of Beds', 'bed', bed_count_opts, fd.get('beds', '1')) }}
+
+                    </div>
+
+                    <button type="submit" class="btn-primary">{{ icon('trend', 20) }}<span>Predict Price</span>{{ icon('arrow-right', 18) }}</button>
+                </form>
+            </section>
+
+            <!-- Result -->
+            <aside class="card result-card" aria-live="polite">
+                <h2 class="card-title">
+                    <span class="title-chip">{{ icon('chart', 22) }}</span>
+                    <span>Estimated Price</span>
+                </h2>
+
+                <div class="price-box">
+                    <span class="coin">{{ icon('dollar', 24) }}</span>
+                    <div>
+                        {% if has_result %}
+                        <div class="price-value" id="finalResult">$ {{ "{:,.0f}".format(result) }}</div>
+                        <div class="price-unit">per night</div>
+                        {% else %}
+                        <div class="price-value muted">$ —</div>
+                        <div class="price-unit">per night</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="note">
+                    <span class="note-icon">{{ icon('check', 22) }}</span>
+                    {% if has_result %}
+                    <p>This is an estimated price based on the input features using our machine learning model.</p>
+                    {% else %}
+                    <p>Fill in the property details and press Predict Price to see an estimate.</p>
+                    {% endif %}
+                </div>
+
+                <h3 class="summary-title">{{ icon('file', 20) }}<span>Listing Summary</span></h3>
+                <ul class="summary">
+                    <li>{{ icon('house', 18) }}<span class="k">Property Type</span>
+                        <span class="v">{{ fd.get('property_type', '—') if has_result else '—' }}</span></li>
+                    <li>{{ icon('bed', 18) }}<span class="k">Room Type</span>
+                        <span class="v">{{ fd.get('room_type', '—') if has_result else '—' }}</span></li>
+                    <li>{{ icon('pin', 18) }}<span class="k">City</span>
+                        <span class="v">{{ city_names.get(fd.get('city'), '—') if has_result else '—' }}</span></li>
+                    <li>{{ icon('users', 18) }}<span class="k">Accommodates</span>
+                        <span class="v">{{ (fd.get('accommodates') ~ ' guests') if has_result else '—' }}</span></li>
+                    <li>{{ icon('bed', 18) }}<span class="k">Bedrooms</span>
+                        <span class="v">{{ (fd.get('bedrooms') ~ ' bedrooms') if has_result else '—' }}</span></li>
+                    <li>{{ icon('bath', 18) }}<span class="k">Bathrooms</span>
+                        <span class="v">{{ (fd.get('bathrooms') ~ ' bathrooms') if has_result else '—' }}</span></li>
+                    <li>{{ icon('bed', 18) }}<span class="k">Bed Type</span>
+                        <span class="v">{{ fd.get('bed_type', '—') if has_result else '—' }}</span></li>
+                </ul>
+
+                <figure class="photo">
+                    <figcaption>A perfect stay, at the right price</figcaption>
+                    <span class="photo-heart">{{ icon('heart', 18) }}</span>
+                </figure>
+            </aside>
+        </main>
+
+        <!-- Feature strip -->
+        <section class="features">
+            <div class="feature">
+                <span class="feature-icon fi-coral">{{ icon('target', 26) }}</span>
+                <div><h4>Accurate Predictions</h4><p>Powered by machine learning for reliable estimates</p></div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon fi-purple">{{ icon('zap', 26) }}</span>
+                <div><h4>Fast &amp; Easy</h4><p>Get results in seconds with a simple form</p></div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon fi-teal">{{ icon('shield-check', 26) }}</span>
+                <div><h4>Data Driven</h4><p>Based on real Airbnb listing patterns and trends</p></div>
+            </div>
+            <div class="feature">
+                <span class="feature-icon fi-pink">{{ icon('heart', 26) }}</span>
+                <div><h4>Better Decisions</h4><p>Help hosts set the right price and maximize bookings</p></div>
+            </div>
+        </section>
+
+    </div>
+</body>
+
+</html>
